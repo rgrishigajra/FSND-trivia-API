@@ -3,32 +3,62 @@ from flask import Flask, request, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 import random
-
 from models import setup_db, Question, Category
-
+import sys
 QUESTIONS_PER_PAGE = 10
 
+
 def create_app(test_config=None):
-  # create and configure the app
-  app = Flask(__name__)
-  setup_db(app)
-  
-  '''
-  @TODO: Set up CORS. Allow '*' for origins. Delete the sample route after completing the TODOs
-  '''
+    # create and configure the app
+    app = Flask(__name__)
+    setup_db(app)
+    CORS(app)
+    @app.after_request
+    def after_request(response):
+        response.headers.add('Access-Control-Allow-Headers',
+                             "Content-Tpe,Authorization,true")
+        response.headers.add('Access-Control-Allow-Methods',
+                             'GET,PUT,POST,PATCH,DELETE,OPTIONS')
+        return response
 
-  '''
-  @TODO: Use the after_request decorator to set Access-Control-Allow
-  '''
-
-  '''
+    @app.route('/categories', methods=['GET'])
+    def list_categories():
+        print("\n\nFetch categories hit:")
+        try:
+          categories_query=Category.query.all()
+          categories={}
+          for cat in categories_query:
+            categories[cat.format()['id']]=cat.format()['type']
+          print(categories,"\n\n")
+          if len(categories_query)==0:
+            abort(404)
+          return jsonify({
+              "success": True,
+              "categories": categories
+          })
+        except:
+          print(sys.exc_info())
+          abort(500)
+    @app.errorhandler(404)
+    def error_resource_not_found(error):
+      return jsonify({
+        "success":False,
+        "message":"Resource not found",
+        "error":404
+      }), 404
+    @app.errorhandler(500)
+    def server_error(error):
+      return jsonify({
+        "success":False,
+        "message":"Internal server error",
+        "error":500
+      }),500
+    '''
   @TODO: 
   Create an endpoint to handle GET requests 
   for all available categories.
   '''
-
-
-  '''
+    '''
   @TODO: 
   Create an endpoint to handle GET requests for questions, 
   including pagination (every 10 questions). 
@@ -41,7 +71,7 @@ def create_app(test_config=None):
   Clicking on the page numbers should update the questions. 
   '''
 
-  '''
+    '''
   @TODO: 
   Create an endpoint to DELETE question using a question ID. 
 
@@ -49,7 +79,7 @@ def create_app(test_config=None):
   This removal will persist in the database and when you refresh the page. 
   '''
 
-  '''
+    '''
   @TODO: 
   Create an endpoint to POST a new question, 
   which will require the question and answer text, 
@@ -60,7 +90,7 @@ def create_app(test_config=None):
   of the questions list in the "List" tab.  
   '''
 
-  '''
+    '''
   @TODO: 
   Create a POST endpoint to get questions based on a search term. 
   It should return any questions for whom the search term 
@@ -71,7 +101,7 @@ def create_app(test_config=None):
   Try using the word "title" to start. 
   '''
 
-  '''
+    '''
   @TODO: 
   Create a GET endpoint to get questions based on category. 
 
@@ -79,9 +109,7 @@ def create_app(test_config=None):
   categories in the left column will cause only questions of that 
   category to be shown. 
   '''
-
-
-  '''
+    '''
   @TODO: 
   Create a POST endpoint to get questions to play the quiz. 
   This endpoint should take category and previous question parameters 
@@ -93,12 +121,10 @@ def create_app(test_config=None):
   and shown whether they were correct or not. 
   '''
 
-  '''
+    '''
   @TODO: 
   Create error handlers for all expected errors 
   including 404 and 422. 
   '''
-  
-  return app
 
-    
+    return app
