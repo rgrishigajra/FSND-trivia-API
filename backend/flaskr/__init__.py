@@ -5,14 +5,18 @@ from flask_cors import CORS
 import random
 from models import setup_db, Question, Category
 import sys
+from werkzeug.exceptions import HTTPException, NotFound
+
 QUESTIONS_PER_PAGE = 10
 
 
 def create_app(test_config=None):
-    # create and configure the app
+  # create and configure the app
     app = Flask(__name__)
     setup_db(app)
     CORS(app)
+
+  # cors headers allow
     @app.after_request
     def after_request(response):
         response.headers.add('Access-Control-Allow-Headers',
@@ -21,43 +25,67 @@ def create_app(test_config=None):
                              'GET,PUT,POST,PATCH,DELETE,OPTIONS')
         return response
 
+  # helper functions
+    def paginate_questions(questions, request):
+        page = request.args.get('page', 1, type=int)
+        start = (page-1)*QUESTIONS_PER_PAGE
+        end = start+QUESTIONS_PER_PAGE
+        selection = [question.format() for question in questions[start:end]]
+        return selection
+  # app routes
+    # routes for categories
     @app.route('/categories', methods=['GET'])
     def list_categories():
-        print("\n\nFetch categories hit:")
+        print("\n\nGET categories hit:")
         try:
-          categories_query=Category.query.all()
-          categories={}
-          for cat in categories_query:
-            categories[cat.format()['id']]=cat.format()['type']
-          print(categories,"\n\n")
-          if len(categories_query)==0:
+            categories_query = Category.query.all()
+            categories = {}
+            for cat in categories_query:
+                categories[cat.id] = cat.type
+            print(categories, "\n\n")
+            if len(categories_query) == 0:
+                abort(404)
+            return jsonify({
+                "success": True,
+                "categories": categories
+            })
+        except NotFound as e:
+            print(sys.exc_info(), e)
             abort(404)
-          return jsonify({
-              "success": True,
-              "categories": categories
-          })
         except:
-          print(sys.exc_info())
-          abort(500)
-    @app.errorhandler(404)
-    def error_resource_not_found(error):
-      return jsonify({
-        "success":False,
-        "message":"Resource not found",
-        "error":404
-      }), 404
-    @app.errorhandler(500)
-    def server_error(error):
-      return jsonify({
-        "success":False,
-        "message":"Internal server error",
-        "error":500
-      }),500
-    '''
-  @TODO: 
-  Create an endpoint to handle GET requests 
-  for all available categories.
-  '''
+            print(sys.exc_info())
+            abort(500)
+
+    # routes for questions
+    @app.route('/questions', methods=['GET'])
+    def get_questions():
+        print("\n\nGET questions hit:")
+        try:
+            categories_query = Category.query.all()
+            categories = {}
+            for cat in categories_query:
+                categories[cat.id] = cat.type
+            if len(categories_query) == 0:
+                abort(404)
+            questions_query = Question.query.all()
+            selection = paginate_questions(questions_query, request)
+            if not selection:
+                abort(404)
+            print(selection, "\n\n")
+            return jsonify({
+                "success": True,
+                "categories": categories,
+                "current_category": 'ALL',
+                "questions": selection,
+                "total_questions": len(questions_query)
+            })
+        except NotFound as e:
+            print(sys.exc_info(), e)
+            abort(404)
+        except e:
+            print(sys.exc_info(), e)
+            abort(500)
+
     '''
   @TODO: 
   Create an endpoint to handle GET requests for questions, 
@@ -126,5 +154,28 @@ def create_app(test_config=None):
   Create error handlers for all expected errors 
   including 404 and 422. 
   '''
+  # error handlers :
+    @app.errorhandler(404)
+    def error_resource_not_found(error):
+        return jsonify({
+            "success": False,
+            "message": "Resource not found",
+            "error": 404
+        }), 404
 
+    @app.errorhandler(500)
+    def server_error(error):
+        return jsonify({
+            "success": False,
+            "message": "Internal server error",
+            "error": 500
+        }), 500
+
+    @app.errorhandler(422)
+    def not_processable(error):
+        return jsonify({
+            "success": False,
+            "error": 422,
+            "message": "request cant be processed"
+        }), 422
     return app

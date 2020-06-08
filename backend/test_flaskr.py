@@ -33,16 +33,38 @@ class TriviaTestCase(unittest.TestCase):
     def test_list_categories(self):
         res = self.client().get('/categories')
         data = json.loads(res.data)
-        if res.status_code==200 :
-            self.assertEqual(data['success'], True)
+        if res.status_code == 200:
+            self.assertTrue(data['success'])
             self.assertTrue(len(data['categories']))
 
-    def test_404_list_categories_failure(self):
+    def test_404_error_list_categories_failure(self):
         res = self.client().get('/categories')
         data = json.loads(res.data)
-        if res.status_code== 404:
-            self.assertEqual(data['success'], False)
+        if res.status_code == 404:
+            self.assertFalse(data['success'])
             self.assertEqual(data['message'], 'Resource not found')
+
+    def test_get_questions(self):
+        res = self.client().get('/questions?page=1')
+        data = json.loads(res.data)
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(data['success'], True)
+        self.assertIsInstance(data['questions'], list)
+        self.assertTrue(len(data['questions']))
+        self.assertIsInstance(data['total_questions'], int)
+        self.assertIsInstance(data['current_category'], str)
+        self.assertIsInstance(data['categories'], dict)
+        self.assertTrue(len(data['categories']))
+
+    def test_404_error_get_questions(self):
+        res = self.client().get('/questions?page=1000')
+        self.assertEqual(res.status_code, 404)
+        data = json.loads(res.data)
+        print(data)
+        self.assertFalse(data['success'])
+        self.assertFalse(data['success'])
+        self.assertEqual(data['message'], 'Resource not found')
+
     """
     TODO
     Write at least one test for each test for successful operation and for expected errors.
