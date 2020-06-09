@@ -86,18 +86,18 @@ def create_app(test_config=None):
             print(sys.exc_info(), e)
             abort(500)
 
-    '''
-  @TODO: 
-  Create an endpoint to handle GET requests for questions, 
-  including pagination (every 10 questions). 
-  This endpoint should return a list of questions, 
-  number of total questions, current category, categories. 
-
-  TEST: At this point, when you start the application
-  you should see questions and categories generated,
-  ten questions per page and pagination at the bottom of the screen for three pages.
-  Clicking on the page numbers should update the questions. 
-  '''
+    @app.route('/questions/<int:question_id>', methods=['DELETE'])
+    def delete_questions(question_id):
+        print('\n\nDELETE questions hit:', question_id)
+        ques = Question.query.get(question_id)
+        if ques is None:
+            abort(404)
+        ques.delete()
+        print(ques.format())
+        return jsonify({
+            'success': True,
+            'deleted': ques.id
+        })
 
     '''
   @TODO: 
@@ -178,4 +178,12 @@ def create_app(test_config=None):
             "error": 422,
             "message": "request cant be processed"
         }), 422
+
+    @app.errorhandler(405)
+    def not_allowed(error):
+        return jsonify({
+            "success": False,
+            "error": 405,
+            "message": "method not allowed"
+        }), 405
     return app

@@ -62,9 +62,20 @@ class TriviaTestCase(unittest.TestCase):
         data = json.loads(res.data)
         print(data)
         self.assertFalse(data['success'])
-        self.assertFalse(data['success'])
         self.assertEqual(data['message'], 'Resource not found')
 
+    def test_delete_questions(self):
+        ques=Question.query.order_by(Question.id).first()
+        res=self.client().delete('/questions/'+str(ques.id))
+        data=json.loads(res.data)
+        self.assertTrue(data['success'])
+        self.assertIsInstance(data['deleted'],int)
+    def test_404_error_delete_questions(self):
+        res=self.client().delete('/questions/1000')
+        data=json.loads(res.data)
+        self.assertEqual(res.status_code,404)
+        self.assertFalse(data['success'])
+        self.assertEqual(data['message'], 'Resource not found')
     """
     TODO
     Write at least one test for each test for successful operation and for expected errors.
