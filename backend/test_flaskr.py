@@ -67,15 +67,30 @@ class TriviaTestCase(unittest.TestCase):
     def test_delete_questions(self):
         ques=Question.query.order_by(Question.id).first()
         res=self.client().delete('/questions/'+str(ques.id))
+        self.assertEqual(res.status_code,200)
         data=json.loads(res.data)
         self.assertTrue(data['success'])
-        self.assertIsInstance(data['deleted'],int)
+        self.assertEqual(data['deleted'],ques.id)
+        test=Question.query.get(ques.id)
+        self.assertEqual(test,None)
     def test_404_error_delete_questions(self):
         res=self.client().delete('/questions/1000')
         data=json.loads(res.data)
         self.assertEqual(res.status_code,404)
         self.assertFalse(data['success'])
         self.assertEqual(data['message'], 'Resource not found')
+    def test_create_question(self):
+        res=self.client().post('/questions',json={'question': 'Who won the UEFA champions league in 2018?', 'answer': 'Real Madrid', 'difficulty': '4', 'category': '6'})
+        data=json.loads(res.data)
+        self.assertEqual(res.status_code,200)
+        self.assertTrue(data['success'])
+        self.assertIsInstance(data['created'],int)
+    def test_400_error_create_question(self):
+        res=self.client().post('/questions',json={'question': 'Who won the UEFA champions league in 2018?', 'answer': 'Real Madrid', 'difficulty': '4'})
+        data=json.loads(res.data)
+        self.assertEqual(res.status_code,400)
+        self.assertFalse(data['success'])
+        self.assertEqual(data['message'], 'Bad request')
     """
     TODO
     Write at least one test for each test for successful operation and for expected errors.

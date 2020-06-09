@@ -67,7 +67,7 @@ def create_app(test_config=None):
                 categories[cat.id] = cat.type
             if len(categories_query) == 0:
                 abort(404)
-            questions_query = Question.query.all()
+            questions_query = Question.query.order_by(Question.id).all()
             selection = paginate_questions(questions_query, request)
             if not selection:
                 abort(404)
@@ -88,7 +88,7 @@ def create_app(test_config=None):
 
     @app.route('/questions/<int:question_id>', methods=['DELETE'])
     def delete_questions(question_id):
-        print('\n\nDELETE questions hit:', question_id)
+        print('\n\nDELETE questions hit:', question_id, "\n\n")
         ques = Question.query.get(question_id)
         if ques is None:
             abort(404)
@@ -99,24 +99,24 @@ def create_app(test_config=None):
             'deleted': ques.id
         })
 
-    '''
-  @TODO: 
-  Create an endpoint to DELETE question using a question ID. 
-
-  TEST: When you click the trash icon next to a question, the question will be removed.
-  This removal will persist in the database and when you refresh the page. 
-  '''
-
-    '''
-  @TODO: 
-  Create an endpoint to POST a new question, 
-  which will require the question and answer text, 
-  category, and difficulty score.
-
-  TEST: When you submit a question on the "Add" tab, 
-  the form will clear and the question will appear at the end of the last page
-  of the questions list in the "List" tab.  
-  '''
+    @app.route('/questions', methods=['POST'])
+    def create_questions():
+        print("\n\nPOST questions hit:",)
+        try:
+            data = request.get_json()
+            print(data,'\n\n')
+            question = Question(question=data['question'],answer=data['answer'],category=data['category'],difficulty=data['difficulty'])
+            question.insert()
+            return jsonify({
+                "success": True,
+                "created":  question.id
+            })
+        except KeyError as e:
+          print(sys.exc_info(),e)
+          abort(400)
+        except:
+            print(sys.exc_info())
+            abort(422)
 
     '''
   @TODO: 
@@ -149,11 +149,6 @@ def create_app(test_config=None):
   and shown whether they were correct or not. 
   '''
 
-    '''
-  @TODO: 
-  Create error handlers for all expected errors 
-  including 404 and 422. 
-  '''
   # error handlers :
     @app.errorhandler(404)
     def error_resource_not_found(error):
@@ -186,4 +181,11 @@ def create_app(test_config=None):
             "error": 405,
             "message": "method not allowed"
         }), 405
+    @app.errorhandler(400)
+    def bad_request(error):
+        return jsonify({
+            "success": False,
+            "error": 400,
+            "message": "Bad request"
+        }), 400
     return app
