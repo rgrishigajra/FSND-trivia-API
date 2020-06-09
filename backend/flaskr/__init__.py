@@ -71,7 +71,7 @@ def create_app(test_config=None):
             selection = paginate_questions(questions_query, request)
             if not selection:
                 abort(404)
-            print(selection, "\n\n")
+            print(questions_query, len(selection), "\n\n")
             return jsonify({
                 "success": True,
                 "categories": categories,
@@ -104,16 +104,36 @@ def create_app(test_config=None):
         print("\n\nPOST questions hit:",)
         try:
             data = request.get_json()
-            print(data,'\n\n')
-            question = Question(question=data['question'],answer=data['answer'],category=data['category'],difficulty=data['difficulty'])
+            print(data, '\n\n')
+            if 'searchTerm' in data:
+                print('searching')
+                search = Question.query.order_by(Question.id).filter(
+                    Question.question.ilike("%"+data['searchTerm']+'%')).all()
+                # questions = paginate_questions(search, request) #to paginate search results, fromt end doesnt support paginating search results
+                questions = [query.format() for query in search]
+                print(len(search), "questions found, showing", len(questions))
+                if len(search) == 0:
+                    return jsonify({"success": False,
+                                    "questions": questions,
+                                    "total_questions": len(search),
+                                    "current_category": "ALL"
+                                    })
+                else:
+                    return jsonify({"success": True,
+                                    "questions": questions,
+                                    "total_questions": len(search),
+                                    "current_category": "ALL"
+                                    })
+            question = Question(question=data['question'], answer=data['answer'],
+                                category=data['category'], difficulty=data['difficulty'])
             question.insert()
             return jsonify({
                 "success": True,
                 "created":  question.id
             })
         except KeyError as e:
-          print(sys.exc_info(),e)
-          abort(400)
+            print(sys.exc_info(), e)
+            abort(400)
         except:
             print(sys.exc_info())
             abort(422)
@@ -181,6 +201,7 @@ def create_app(test_config=None):
             "error": 405,
             "message": "method not allowed"
         }), 405
+
     @app.errorhandler(400)
     def bad_request(error):
         return jsonify({
