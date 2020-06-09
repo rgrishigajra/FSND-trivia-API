@@ -5,7 +5,8 @@ from flask_cors import CORS
 import random
 from models import setup_db, Question, Category
 import sys
-from werkzeug.exceptions import HTTPException, NotFound
+from werkzeug.exceptions import HTTPException, NotFound, PreconditionFailed
+from sqlalchemy.sql import func
 
 QUESTIONS_PER_PAGE = 10
 
@@ -158,15 +159,34 @@ def create_app(test_config=None):
         except:
             print(sys.exc_info())
             abort(422)
-
-    '''
-  @TODO: 
-  Create a GET endpoint to get questions based on category. 
-
-  TEST: In the "List" tab / main screen, clicking on one of the 
-  categories in the left column will cause only questions of that 
-  category to be shown. 
-  '''
+    # routes for quizzes
+    @app.route('/quizzes', methods=['POST'])
+    def get_quiz_question():
+        print('\n\nGET quiz hit:')
+        data = request.get_json()
+        print(data)
+        try:
+            if data['quiz_category']['id']:
+                questions = Question.query.filter(~(Question.id.in_(data['previous_questions']))).filter(
+                    Question.category == data['quiz_category']['id']).order_by(func.random()).first()
+            else:
+                questions = Question.query.filter(
+                    ~(Question.id.in_(data['previous_questions']))).order_by(func.random()).first()
+            if questions is not None:
+                selected_ques = questions.format()
+            else:
+                selected_ques = False
+                # abort(412) #this doesnt work on front end but i think it should have
+            print(selected_ques)
+            return jsonify({
+                "success": True,
+                'question': selected_ques})
+        except PreconditionFailed as e:
+            print(sys.exc_info(), e)
+            abort(412)
+        except e:
+            print(sys.exc_info(), e)
+            abort(500)
     '''
   @TODO: 
   Create a POST endpoint to get questions to play the quiz. 
@@ -201,7 +221,7 @@ def create_app(test_config=None):
         return jsonify({
             "success": False,
             "error": 422,
-            "message": "request cant be processed"
+            "message": "Request cant be processed"
         }), 422
 
     @app.errorhandler(405)
@@ -219,4 +239,13 @@ def create_app(test_config=None):
             "error": 400,
             "message": "Bad request"
         }), 400
+
+    @app.errorhandler(412)
+    def bad_request(error):
+        return jsonify({
+            "success": False,
+            "error": 412,
+            "message": "Precondition for resouce failed",
+            "question": False
+        }), 412
     return app
