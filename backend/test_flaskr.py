@@ -47,6 +47,7 @@ class TriviaTestCase(unittest.TestCase):
     def test_get_questions(self):
         res = self.client().get('/questions?page=1')
         data = json.loads(res.data)
+        # print(data)
         self.assertEqual(res.status_code, 200)
         self.assertTrue(data['success'], True)
         self.assertIsInstance(data['questions'], list)
@@ -60,7 +61,7 @@ class TriviaTestCase(unittest.TestCase):
         res = self.client().get('/questions?page=1000')
         self.assertEqual(res.status_code, 404)
         data = json.loads(res.data)
-        print(data)
+        # print(data)
         self.assertFalse(data['success'])
         self.assertEqual(data['message'], 'Resource not found')
 
@@ -69,6 +70,7 @@ class TriviaTestCase(unittest.TestCase):
         res = self.client().delete('/questions/'+str(ques.id))
         self.assertEqual(res.status_code, 200)
         data = json.loads(res.data)
+        # print(dat)
         self.assertTrue(data['success'])
         self.assertEqual(data['deleted'], ques.id)
         test = Question.query.get(ques.id)
@@ -85,6 +87,7 @@ class TriviaTestCase(unittest.TestCase):
         res = self.client().post('/questions',
                                  json={'question': 'Who won the UEFA champions league in 2018?', 'answer': 'Real Madrid', 'difficulty': '4', 'category': '6'})
         data = json.loads(res.data)
+        # print(data)
         self.assertEqual(res.status_code, 200)
         self.assertTrue(data['success'])
         self.assertIsInstance(data['created'], int)
@@ -117,6 +120,7 @@ class TriviaTestCase(unittest.TestCase):
     def test_get_category_questions(self):
         res = self.client().get('/categories/6/questions')
         data = json.loads(res.data)
+        # print(data)
         self.assertEqual(res.status_code, 200)
         self.assertTrue(data['success'])
         self.assertIsInstance(data['questions'], list)
@@ -135,23 +139,21 @@ class TriviaTestCase(unittest.TestCase):
         jsonobj={'quiz_category': {'type': 'Sports', 'id': '6'},"previous_questions":[24,11]}
         res = self.client().post('/quizzes', json=jsonobj)
         data = json.loads(res.data)
+        # print(data)
         self.assertIsInstance(data['question'],dict)
         self.assertTrue(bool(data['question']))
         self.assertNotIn(data['question']['id'],jsonobj['previous_questions'])
 
-    def test_error_quiz(self):
+    def test_error_quiz_out_of_questions(self):
         questions = Question.query.filter(
                 Question.category == 6).all()
         selection = [question.format()['id'] for question in questions]
         jsonobj={'quiz_category':  {'type': 'Sports', 'id': '6'},"previous_questions":selection}
         res = self.client().post('/quizzes', json=jsonobj)
         data = json.loads(res.data)
+        # print(data)
         self.assertEqual(res.status_code, 200)
         self.assertFalse(data['question'])
-    """
-    TODO
-    Write at least one test for each test for successful operation and for expected errors.
-    """
 
 
 # Make the tests conveniently executable

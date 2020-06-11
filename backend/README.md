@@ -52,42 +52,6 @@ Setting the `FLASK_ENV` variable to `development` will detect file changes and r
 
 Setting the `FLASK_APP` variable to `flaskr` directs flask to use the `flaskr` directory and the `__init__.py` file to find the application. 
 
-## Tasks
-
-One note before you delve into your tasks: for each endpoint you are expected to define the endpoint and response data. The frontend will be a plentiful resource because it is set up to expect certain endpoints and response data formats already. You should feel free to specify endpoints in your own way; if you do so, make sure to update the frontend or you will get some unexpected behavior. 
-
-1. Use Flask-CORS to enable cross-domain requests and set response headers. 
-2. Create an endpoint to handle GET requests for questions, including pagination (every 10 questions). This endpoint should return a list of questions, number of total questions, current category, categories. 
-3. Create an endpoint to handle GET requests for all available categories. 
-4. Create an endpoint to DELETE question using a question ID. 
-5. Create an endpoint to POST a new question, which will require the question and answer text, category, and difficulty score. 
-6. Create a POST endpoint to get questions based on category. 
-7. Create a POST endpoint to get questions based on a search term. It should return any questions for whom the search term is a substring of the question. 
-8. Create a POST endpoint to get questions to play the quiz. This endpoint should take category and previous question parameters and return a random questions within the given category, if provided, and that is not one of the previous questions. 
-9. Create error handlers for all expected errors including 400, 404, 422 and 500. 
-
-REVIEW_COMMENT
-```
-This README is missing documentation of your endpoints. Below is an example for your endpoint to get all categories. Please use it as a reference for creating your documentation and resubmit your code. 
-
-Endpoints
-GET '/categories'
-GET ...
-POST ...
-DELETE ...
-
-GET '/categories'
-- Fetches a dictionary of categories in which the keys are the ids and the value is the corresponding string of the category
-- Request Arguments: None
-- Returns: An object with a single key, categories, that contains a object of id: category_string key:value pairs. 
-{'1' : "Science",
-'2' : "Art",
-'3' : "Geography",
-'4' : "History",
-'5' : "Entertainment",
-'6' : "Sports"}
-
-```
 
 
 ## Testing
@@ -98,3 +62,135 @@ createdb trivia_test
 psql trivia_test < trivia.psql
 python test_flaskr.py
 ```
+
+## API Reference
+### Error Handling
+Errors are returned as JSON objects in the following format:
+```
+{
+    "success": False, 
+    "error": 400,
+    "message": "bad request"
+}
+```
+The API will return three error types when requests fail:
+- 400: Bad Request
+- 404: Resource Not Found
+- 422: Request cant be processed
+- 405: Method Not allowed
+- 500: Internal server error
+
+### Endpoints 
+
+GET '/categories' 
+GET '/categories/<int:category_id>/questions'
+GET '/questions'
+POST '/questions'
+POST '/quizzes'
+DELETE '/questions/<int:question_id>'
+
+
+GET '/categories'
+- Fetches a dictionary of categories in which the keys are the ids and the value is the corresponding string of the category
+- Request Arguments: None
+- Returns: An object with a single key, categories, that contains a object of id: category_string key:value pairs. 
+```
+{'1' : "Science",
+'2' : "Art",
+'3' : "Geography",
+'4' : "History",
+'5' : "Entertainment",
+'6' : "Sports"}
+```
+GET '/categories/<int:category_id>/questions'
+-  Gets questions based on category.
+-  Request Arguments: None
+-  Returns: Category requested, an array of questions, each a dictionary with 4 keys as given below
+```
+{
+'current_category': 6, 
+'questions': [
+                {
+                'answer': 'Brazil', 
+                'category': 6, 
+                'difficulty': 3, 
+                'id': 10, 
+                'question': 'Which is the only team to play in every soccer World Cup tournament?
+                },
+                {'answer': 'Uruguay', 
+                'category': 6, 
+                'difficulty': 4, 
+                'id': 11, 
+                'question': 'Which country won the first ever soccer World Cup in 1930?'}
+            ], 
+'success': True, 
+'total_questions': 6
+    
+}
+```
+
+GET '/questions?page=<int:page_no>'
+-  Gets all questions
+-  Request Arguments: page number, pased in url
+-  Returns: questions, including pagination (every 10 questions).This endpoint returns a list of questions,number of total questions, current category, categories.
+```
+{
+    'categories': 
+        {'1': 'Science', '2': 'Art', '3': 'Geography', '4': 'History', '5': 'Entertainment', '6': 'Sports'}, 
+        'current_category': 'ALL',
+        'total_questions': 19,
+        'questions': [
+                {
+                'answer': 'Brazil', 
+                'category': 6, 
+                'difficulty': 3, 
+                'id': 10, 
+                'question': 'Which is the only team to play in every soccer World Cup tournament?
+                },
+                {'answer': 'Uruguay', 
+                'category': 6, 
+                'difficulty': 4, 
+                'id': 11, 
+                'question': 'Which country won the first ever soccer World Cup in 1930?'}
+                ]
+    }
+```
+POST '/questions'
+- Performs search on all questions and Adding a question based on what args are passed.
+- Request Arguments: A json in data with key 'searchTerm' OR keys: 'question','answer','difficulty''category'
+- Returns: An array of questions like in the example aboce if theres a search happening or confirmation of the new question created by sending its ID
+```
+Either:
+    {'created': 29, 'success': True}
+Or: Same response as the GET Questions API response
+```
+POST '/quizzes'
+- Returns a question from the particular category thats asked, or a question in general if no category is defined, the question doesnt appear in the previous questions array that was passed in arguments.
+- Request Arguments: {'quiz_category': {'type': , 'id': },"previous_questions":[An array of question Ids that have been used already]} 
+- Returns a question, same structure as above. Returns False in question field instead of a json when theres no question left, this turns the game off on front end.
+- 
+```
+{
+'question': {
+    'answer': 'Real Madrid', 
+    'category': 6, 
+    'difficulty': 4, 
+    'id': 26, 
+    'question': 'Who won the UEFA champions league in 2018?'
+    }, 
+'success': True
+}
+```
+
+DELETE '/questions/<int:question_id>'
+- Delete the question for which id is specified
+- Request Args: The question ID
+- Returns the id of the question deleted as confirmation
+```
+{'deleted': 10, 'success': True}
+```
+## Authors
+Rishabh Gajra and The udacity team that made the starter code and Project tasks.
+
+
+
